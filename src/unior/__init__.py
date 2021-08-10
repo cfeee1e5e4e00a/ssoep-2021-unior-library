@@ -24,21 +24,10 @@ def disconnect():
     _breather.disconnect()
 
 
-def get_value() -> float:
+def read() -> float:
     """
     Reads data from sensor
 
     :return: Current value from sensor
     """
     return _breather.getData()
-
-
-
-
-
-
-
-
-
-
-
