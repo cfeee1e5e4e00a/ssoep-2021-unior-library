@@ -9,5 +9,11 @@
 
 ## Usage:
 ```python
+from unior.connection import Connection
 
+connection = Connection('<your mac addr>')
+
+print(connection.value)
+
+connection.disconnect()
 ```
