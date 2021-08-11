@@ -1,33 +1,22 @@
-import dbus as _dbus
+# e2e test kekw
+if __name__ == '__main__':
+    import signal
+    import time
+    from connection import Connection
 
-_bus = _dbus.SystemBus()
-_obj = _bus.get_object('ru.leadpogrommer.Breather', '/')
-_breather = _dbus.Interface(_obj, "ru.leadpogrommer.Breather")
+    is_running = True
 
+    def signal_handler(_, __):
+        global is_running
+        is_running = False
 
-def connect(mac: str) -> bool:
-    """
-    Connects to bluetooth sensor
+    signal.signal(signal.SIGINT, signal_handler)
+    connection = Connection('ef:f4:38:77:8f:bc')
 
-    :param mac: Mac address of the sensor
-    :return: True if device was connected, False if some error occurred
-    """
-    return _breather.connect(mac)
+    while is_running:
+        print(connection.value)
+        time.sleep(0.01)
 
-
-def disconnect():
-    """
-    Disconnects from the sensor. Always call this function at the end of your program
-
-    :return: nothing
-    """
-    _breather.disconnect()
-
-
-def read() -> float:
-    """
-    Reads data from sensor
-
-    :return: Current value from sensor
-    """
-    return _breather.getData()
+    print("Stooping")
+    connection.disconnect()
+    print("Stopped")
