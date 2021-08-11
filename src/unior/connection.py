@@ -2,21 +2,32 @@ import bleak
 import asyncio
 import struct
 from data_processing import BreathProcessor
+import threading
 
-floyd = BreathProcessor()
-
-def handle_data(i: int, bytes: bytearray):
-    print(1)
-    data = struct.unpack('ff25f', bytes)
-    values = list(data[2:])
-    for v in values:
-        print(floyd.process(v))
 
 class Connection:
     def __init__(self, mac: str):
+        self._connected = True
+        self._value = 0
+        self.breathe_processor = BreathProcessor()
         self.mac = mac
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._bootstrap())
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self._bootstrap())
+        self.thread = threading.Thread(name=f'Device {self.mac} thread', target=lambda :self.loop.run_forever())
+        self.thread.start()
+        # now loop runs in another thread
+
+    def _handle_data(self, i: int, bytes: bytearray):
+        # print(1)
+        data = struct.unpack('ff25f', bytes)
+        values = list(data[2:])
+        for v in values:
+            self._value = self.breathe_processor.process(v)
+
+    @property
+    def value(self):
+        # this is probably thread-safe.... I hope
+        return self._value
 
     async def _bootstrap(self):
         self.client = bleak.BleakClient(self.mac)
@@ -29,8 +40,18 @@ class Connection:
         start_cmd = bytearray((0x53, 0x54, 0x41, 0x52, 0x54, 0x00))
 
         await self.client.write_gatt_char(rx_char, start_cmd)
-        await self.client.start_notify(data_char, handle_data)
-        print(2)
+        await self.client.start_notify(data_char, self._handle_data)
 
-    async def __del__(self):
-        await self.client.disconnect()
+
+    def disconnect(self):
+        if not self._connected:
+            return
+        self.loop.call_soon_threadsafe(lambda: self.loop.stop())
+        self.thread.join()
+        # now loop runs in caller thread
+        self.loop.run_until_complete(self.client.disconnect())
+
+
+    def __del__(self):
+        self.disconnect()
+
