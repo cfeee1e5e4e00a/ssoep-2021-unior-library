@@ -1,4 +1,4 @@
-from filters import BSF50, LPF5, HPF01
+from .filters import BSF50, LPF5, HPF01
 
 class BreathProcessor:
     def __init__(self):

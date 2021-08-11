@@ -1,7 +1,7 @@
 import bleak
 import asyncio
 import struct
-from data_processing import BreathProcessor
+from .data_processing import BreathProcessor
 import threading
 
 
@@ -30,6 +30,9 @@ class Connection:
         return self._value
 
     async def _bootstrap(self):
+        proc = await asyncio.subprocess.create_subprocess_shell('sudo bluetoothctl power on')
+        await proc.communicate()
+
         self.client = bleak.BleakClient(self.mac)
         await self.client.connect()
 
