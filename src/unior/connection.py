@@ -4,13 +4,16 @@ import struct
 from .data_processing import BreathProcessor
 import threading
 import queue
+import time
 
 
 class Connection:
-    def __init__(self, mac: str):
+    def __init__(self, mac: str, do_not_power_on=False):
+        self._do_not_power_on = do_not_power_on
         self._starting_thread = threading.current_thread()
         self._disconnect_lock = threading.Lock()
-        self._queue = queue.LifoQueue(maxsize=100_000)
+        # self._queue = queue.LifoQueue(maxsize=100_000) # I am sorry, but i have schizophrenia
+        self._queue = queue.Queue(maxsize=100_000)
         self.breathe_processor = BreathProcessor()
         self.mac = mac
         self._value = 0
@@ -54,8 +57,9 @@ class Connection:
         return v
 
     async def _bootstrap(self):
-        proc = await asyncio.subprocess.create_subprocess_shell('sudo bluetoothctl power on')
-        await proc.communicate()
+        if not self._do_not_power_on:
+            proc = await asyncio.subprocess.create_subprocess_shell('sudo bluetoothctl power on')
+            await proc.communicate()
 
         self.client = bleak.BleakClient(self.mac)
         await self.client.connect()
