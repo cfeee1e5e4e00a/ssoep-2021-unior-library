@@ -40,7 +40,7 @@ class Connection:
             print("WARNING: sensor data was ignored! Your code can't keep up with incoming data! New data will be lost!")
 
     @property
-    def prev_value(self):
+    def current_value(self):
         # this is probably thread-safe.... I hope
         return self._value
 
